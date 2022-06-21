@@ -129,6 +129,14 @@
         mysound.jump(curt,duration-curt);
       }
     })
+    document.body.addEventListener('touchstart',e=>{
+      let x = e.clientX;
+      let y = e.clientY;
+      let curt = floor(duration*x/width);
+      if(y>height-200&&soundFileLoaded){
+        mysound.jump(curt,duration-curt);
+      }
+    })
   </script>
 </body>
 
