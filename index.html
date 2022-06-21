@@ -109,6 +109,9 @@
       
     }
     function toggleSoundPlay(e) {
+      if(!soundFileLoaded){
+        alert("请等待音频加载完成");
+      }
       if (issoundplay) {
         mysound.pause();
       }
