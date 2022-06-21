@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite App</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #app {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+    button{
+      display: block;
+      width:160px;
+      height:50px;
+      font-size: 18px;
+      cursor: pointer;
+      background:white;
+      color:black;
+      margin:20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <button onClick='toggleSoundPlay(this)' id="btn">播放</button>
+  </div>
+  <script src="https://cdn.bootcdn.net/ajax/libs/p5.js/1.4.1/p5.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/p5.js/1.4.1/addons/p5.sound.min.js"></script>
+  
+  <script>
+    let width = document.body.clientWidth;
+    let height = document.body.clientHeight;
+    let mysound;
+    let soundFileLoaded =false;
+    let fft = new p5.FFT();
+    let peaks;
+    let duration = 0;
+    let issoundplay = false;
+    function preload() {
+      soundFormats('mp3', 'ogg');
+      mysound = loadSound('/assets/Saudade.mp3',()=>{
+        soundFileLoaded=true;
+        colorMode(RGB,255,255,255,1)
+      });
+    }
+    function setup() {
+      createCanvas(width, height)
+      peaks = mysound.getPeaks(width);
+      duration = floor(mysound.duration());
+    }
+    function draw() {
+      background(255);
+      let spectrum = fft.analyze();
+      noStroke();
+      
+      push();
+      translate(width/2,height/2);
+      let rs = 0//200;
+      let range = 400;
+      for (let i = 0,ls = spectrum.length; i < ls; i++) {
+        rotate(i*TWO_PI/ls)
+        // let x = i*2;
+        let h = map(spectrum[i], 0, 255, 0, range);
+        // let y = 200 - h;
+        fill(255, 100, 155,0.05);
+        rect(-1, rs, 2, h);
+        if(h>4){
+          fill(155,100,155,1);
+          ellipse(0, rs+h-1, 4, 4);
+        }
+        
+      }
+      pop();
+      let curr = mysound.currentTime();
+      let curposition = width*curr/duration;
+     
+      for(let i = 0,ls = peaks.length;i<ls;i+=2){
+        let h = map(peaks[i],-0.5,1,0,100)
+        if(i<curposition){
+          fill(250,199,210,1);
+        }
+        else{
+          fill(230,230,230);
+        }
+        rect(i,height-100-h,2,2*h)
+      }
+      stroke(0);
+      strokeWeight(2);
+      line(curposition,height-200,curposition,height);
+      
+    }
+    function toggleSoundPlay(e) {
+      if (issoundplay) {
+        mysound.pause();
+      }
+      else {
+        mysound.play();
+      }
+      issoundplay = !issoundplay;
+      e.innerText = issoundplay?'暂停':'播放';
+    }
+    document.body.addEventListener('click',e=>{
+      let x = e.clientX;
+      let y = e.clientY;
+      let curt = floor(duration*x/width);
+      if(y>height-200&&soundFileLoaded){
+        mysound.jump(curt,duration-curt);
+      }
+    })
+  </script>
+</body>
+
+</html>
