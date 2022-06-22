@@ -27,7 +27,7 @@
       z-index: 10;
     }
     button{
-      display: block;
+      display:inline-block;
       width:160px;
       height:50px;
       font-size: 18px;
@@ -36,12 +36,18 @@
       color:black;
       margin:20px;
     }
+    .timec{
+      display: inline-block;
+      margin:20px;
+    }
   </style>
 </head>
 
 <body>
   <div id="app">
-    <button onClick='toggleSoundPlay(this)' id="btn">播放</button>
+    <button onClick='toggleSoundPlay(this)' id="btn" disabled>正在加载...</button>
+    <div class="timec"><span id="currtime">--:--</span>/<span id="totaltime">--:--</span></div>
+    
   </div>
   <script src="https://cdn.bootcdn.net/ajax/libs/p5.js/1.4.1/p5.min.js"></script>
   <script src="https://cdn.bootcdn.net/ajax/libs/p5.js/1.4.1/addons/p5.sound.min.js"></script>
@@ -49,26 +55,36 @@
   <script>
     let width = document.body.clientWidth;
     let height = document.body.clientHeight;
+    let cav,ctx;
     let mysound;
     let soundFileLoaded =false;
     let fft = new p5.FFT();
     let peaks;
     let duration = 0;
     let issoundplay = false;
+    let currtime = document.getElementById('currtime')
     function preload() {
       soundFormats('mp3', 'ogg');
       mysound = loadSound('/assets/Saudade.mp3',()=>{
         soundFileLoaded=true;
+        let btn = document.getElementById('btn')
+        btn.disabled=false;
+        btn.innerText = '播放'
         colorMode(RGB,255,255,255,1)
       });
     }
     function setup() {
-      createCanvas(width, height)
+      cav = createCanvas(width, height);
+      
+      ctx = cav.drawingContext;
+      ctx.globalCompositeOperation = 'lighter';
       peaks = mysound.getPeaks(width);
       duration = floor(mysound.duration());
+      document.getElementById('totaltime').innerText = floor(duration/60)+":"+duration%60;
     }
     function draw() {
-      background(255);
+      ctx.clearRect(0,0,width,height)
+      // background(255);
       let spectrum = fft.analyze();
       noStroke();
       
@@ -81,9 +97,18 @@
         // let x = i*2;
         let h = map(spectrum[i], 0, 255, 0, range);
         // let y = 200 - h;
-        fill(255, 100, 155,0.05);
-        rect(-1, rs, 2, h);
+        // fill(255, 100, 155,0.05);
+        // rect(-1, rs, 2, h);
+        stroke(255,100,155,0.05);
+        line(0,rs,0,h);
         if(h>4){
+          let grd = ctx.createRadialGradient(0,rs+h-1,0,0,rs+h-1,100)
+          grd.addColorStop(0,`rgba(255,100,155,0.1)`);
+          grd.addColorStop(1,`rgba(255,100,155,0.001)`)
+          ctx.fillStyle = grd;
+          noStroke();
+          ctx.arc(0,rs+h-1,100,0,TWO_PI,true);
+          ctx.fill();
           fill(155,100,155,1);
           ellipse(0, rs+h-1, 4, 4);
         }
@@ -91,6 +116,9 @@
       }
       pop();
       let curr = mysound.currentTime();
+      let stxt = floor(curr%60)+"";
+      stxt = stxt.length==1?'0'+stxt:stxt
+      currtime.innerText = floor(curr/60)+":"+stxt;
       let curposition = width*curr/duration;
      
       for(let i = 0,ls = peaks.length;i<ls;i+=2){
